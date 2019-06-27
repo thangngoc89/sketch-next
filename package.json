@@ -1,0 +1,12 @@
+{
+  "name": "codemirror-view",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Khoa Nguyen <hi@khoanguyen.me>",
+  "license": "MIT",
+  "devDependencies": {
+    "bs-platform": "^5.0.4",
+    "bsb-js": "^1.1.7",
+    "parcel-bundler": "^1.12.3"
+  }
+}
