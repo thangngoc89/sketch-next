@@ -1,7 +1,46 @@
 <!-- index.html -->
 <!DOCTYPE html>
 <html>
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href="./node_modules/codemirror/lib/codemirror.css"
+  />
+  <style>
+    body,
+    main {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+    }
+
+    main {
+      display: flex;
+      flex-direction: row;
+      min-height: 100vh;
+    }
+    #editor {
+      flex: 1;
+    }
+    #result {
+      background: #eee;
+      flex: 0 0 300px;
+      font-family: monospace;
+      padding: 0 0.5rem;
+    }
+    .CodeMirror {
+      height: 100%;
+    }
+  </style>
   <body>
+    <main>
+      <div id="editor"></div>
+      <div id="result">
+        <div>
+          let b: int = 2;
+        </div>
+      </div>
+    </main>
     <script src="./src/index.re"></script>
   </body>
 </html>
