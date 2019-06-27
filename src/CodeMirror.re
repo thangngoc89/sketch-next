@@ -318,6 +318,7 @@ module Editor = {
     (editor, ~line: int, ~precise: bool) => array(Token.t) =
     "";
 
+  [@bs.send] external heightAtLine: (editor, ~line: int) => int = "";
   module GetOption = {
     [@bs.send]
     external indentUnit: (editor, [@bs.as "indentUnit"] _) => int =

@@ -1,0 +1,15 @@
+type pos = {
+  char: int,
+  line: int,
+};
+
+type loc = (pos, pos);
+
+type phrase = {
+  startLine: int,
+  endLine: int,
+  content: string,
+  value: string,
+};
+
+

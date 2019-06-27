@@ -9,7 +9,9 @@
     "in-source": true
   },
   "suffix": ".bs.js",
-  "bs-dependencies": [],
+  "bs-dependencies": [
+    "bs-webapi"
+  ],
   "warnings": {
     "error": "+101"
   },
