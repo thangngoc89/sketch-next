@@ -18,9 +18,11 @@
       display: flex;
       flex-direction: row;
       min-height: 100vh;
+      max-width: 100%;
     }
     #editor {
       flex: 1;
+      max-width: calc(100vw - 300px);
     }
     #result {
       background: #eee;
@@ -31,6 +33,9 @@
     }
     .CodeMirror {
       height: 100%;
+    }
+    .exec-gutter {
+      width: 10px;
     }
   </style>
   <body>

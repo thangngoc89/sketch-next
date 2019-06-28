@@ -12,6 +12,9 @@ type valueState = {
 let make = (~editor, ~phrs: list(phrase)) => {
   let (phrs, setPhrs) = React.useState(() => phrs);
 
+  let doc =
+    React.useMemo1(() => editor->CodeMirror.Editor.getDoc, [|editor|]);
+
   let values =
     React.useMemo1(
       () =>
@@ -33,9 +36,11 @@ let make = (~editor, ~phrs: list(phrase)) => {
     () => {
       EventEmitter.subscribe(event =>
         switch (event) {
-        | UpdatePhrs(phrs) =>
-          let _foo: unit = setPhrs(_ => phrs);
-          ();
+        | UpdatePhrs(phrs) => setPhrs(_ => phrs)
+        | EditedFromLine(line) =>
+          setPhrs(currentPhrs =>
+            currentPhrs->Belt.List.keep(({startLine}) => startLine < line)
+          )
         | _ => ()
         }
       );
@@ -45,7 +50,7 @@ let make = (~editor, ~phrs: list(phrase)) => {
   );
   <>
     {values
-     ->Belt.List.map(({top, valueContent}) =>
+     ->Belt.List.map(({top, line, valueContent}) =>
          <div
            key={string_of_int(top)}
            style={ReactDOMRe.Style.make(
@@ -53,7 +58,25 @@ let make = (~editor, ~phrs: list(phrase)) => {
              ~width="300px",
              ~position="absolute",
              (),
-           )}>
+           )}
+           onMouseOver={_ =>
+             doc
+             ->CodeMirror.Doc.addLineClass(
+                 ~line,
+                 ~where=`background,
+                 ~className="CodeMirror-activeline-background",
+               )
+             ->ignore
+           }
+           onMouseOut={_ =>
+             doc
+             ->CodeMirror.Doc.removeLineClass(
+                 ~line,
+                 ~where=`background,
+                 ~className="CodeMirror-activeline-background",
+               )
+             ->ignore
+           }>
            valueContent->React.string
          </div>
        )
