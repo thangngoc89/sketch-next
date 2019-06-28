@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "bs-webapi": "^0.15.2",
-    "codemirror": "^5.48.0"
+    "codemirror": "^5.48.0",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "reason-react": "^0.7.0"
   }
 }

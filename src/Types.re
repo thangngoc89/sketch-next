@@ -12,4 +12,6 @@ type phrase = {
   value: string,
 };
 
-
+type event = ..;
+type event +=
+  | UpdatePhrs(list(phrase));

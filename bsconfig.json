@@ -1,5 +1,8 @@
 {
   "name": "codemirror-view",
+  "reason": {
+    "react-jsx": 3
+  },
   "sources": {
     "dir": "src",
     "subdirs": true
@@ -9,9 +12,7 @@
     "in-source": true
   },
   "suffix": ".bs.js",
-  "bs-dependencies": [
-    "bs-webapi"
-  ],
+  "bs-dependencies": ["bs-webapi", "reason-react"],
   "warnings": {
     "error": "+101"
   },

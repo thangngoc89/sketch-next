@@ -18,13 +18,12 @@ let editor =
 
 open Types;
 
-Manager.render(
-  ~editor,
-  ~phrs=[
-    {startLine: 0, endLine: 0, content: "let a = 1;", value: "let a = 1;"},
-    {startLine: 4, endLine: 4, content: "let b = 2;", value: "let b = 2;"},
-  ],
-);
+let phrs = [
+  {startLine: 0, endLine: 0, content: "let a = 1;", value: "let a = 1;"},
+  {startLine: 4, endLine: 4, content: "let b = 2;", value: "let b = 2;"},
+];
+
+ReactDOMRe.renderToElementWithId(<ReactRoot editor phrs />, "result");
 
 %raw
 {|
