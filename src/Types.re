@@ -15,3 +15,5 @@ type phrase = {
 type event = ..;
 type event +=
   | UpdatePhrs(list(phrase));
+
+type state = {mutable lastExecLine: int};

@@ -50,6 +50,7 @@ let make = (~editor, ~phrs: list(phrase)) => {
            key={string_of_int(top)}
            style={ReactDOMRe.Style.make(
              ~top={string_of_int(top) ++ "px"},
+             ~width="300px",
              ~position="absolute",
              (),
            )}>
@@ -59,11 +60,7 @@ let make = (~editor, ~phrs: list(phrase)) => {
      ->Belt.List.toArray
      ->React.array}
     <button
-      style={ReactDOMRe.Style.make(
-        ~bottom=[@reason.preserve_braces] "0px",
-        ~position="absolute",
-        (),
-      )}
+      style={ReactDOMRe.Style.make(~bottom="0px", ~position="absolute", ())}
       onClick={_ =>
         EventEmitter.emit(
           UpdatePhrs([
