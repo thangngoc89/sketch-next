@@ -1,5 +1,20 @@
 open Types;
 
+let createWidget = html => {
+  open Webapi.Dom;
+  let widget = document |> Document.createElement("div");
+
+  let wrapper = document |> Document.createElement("div");
+
+  widget |> Element.appendChild(wrapper);
+
+  let content = document |> Document.createElement("span");
+  wrapper |> Element.appendChild(content);
+  content->Element.setInnerHTML(html);
+
+  widget;
+};
+
 type valueState = {
   top: int,
   line: int,
@@ -72,6 +87,20 @@ let make = (~editor, ~phrs: list(phrase)) => {
                  ~className="CodeMirror-activeline-background",
                )
              ->ignore
+           }
+           handleShowInline={() =>
+             editor->CodeMirror.Editor.addLineWidget(
+               ~line,
+               ~element=createWidget(valueContent),
+               ~options=
+                 CodeMirror.LineWidget.options(
+                   ~noHScroll=true,
+                   ~coverGutter=false,
+                   ~above=false,
+                   ~showIfHidden=false,
+                   ~handleMouseEvents=false,
+                 ),
+             )
            }
          />
        )

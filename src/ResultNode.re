@@ -1,7 +1,29 @@
 let maxLength = 40;
 
 [@react.component]
-let make = (~resultContent, ~top, ~onMouseOver, ~onMouseOut) => {
+let make =
+    (~handleShowInline, ~resultContent, ~top, ~onMouseOver, ~onMouseOut) => {
+  let (inlineStatus, setInlineStatus) = React.useState(() => false);
+  let (inlineWidgetHandle, setInlineWidgetHandle) =
+    React.useState(() => None);
+
+  React.useEffect1(
+    () => {
+      if (inlineStatus) {
+        setInlineWidgetHandle(_ => Some(handleShowInline()));
+      } else {
+        switch (inlineWidgetHandle) {
+        | None => ()
+        | Some(handle) =>
+          CodeMirror.LineWidget.clear(handle);
+          setInlineWidgetHandle(_ => None);
+        };
+      };
+      None;
+    },
+    [|inlineStatus|],
+  );
+
   let clippedContent =
     React.useMemo1(
       () => {
@@ -33,7 +55,11 @@ let make = (~resultContent, ~top, ~onMouseOver, ~onMouseOut) => {
     onMouseOver
     onMouseOut>
     <span className="result__content"> clippedContent->React.string </span>
-    <button className="result__button"> <Icons.FiEye /> </button>
+    <button
+      className="result__button"
+      onClick={_ => setInlineStatus(current => !current)}>
+      {!inlineStatus ? <Icons.FiEye /> : <Icons.FiEyeOff />}
+    </button>
     <button className="result__button"> <Icons.FiPlusSquare /> </button>
   </div>;
 };
