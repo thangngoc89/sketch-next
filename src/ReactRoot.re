@@ -188,21 +188,5 @@ let make = (~editor, ~phrs: list(phrase)) => {
        )
      ->Belt.List.toArray
      ->React.array}
-    <button
-      style={ReactDOMRe.Style.make(~bottom="0px", ~position="absolute", ())}
-      onClick={_ =>
-        EventEmitter.emit(
-          UpdatePhrs([
-            {
-              startLine: 0,
-              endLine: 0,
-              content: "let a = 1;",
-              value: "let a = 1;",
-            },
-          ]),
-        )
-      }>
-      "Update phrs"->React.string
-    </button>
   </>;
 };
