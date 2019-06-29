@@ -5,9 +5,9 @@ let createWidget = html => {
   let widget = document |> Document.createElement("div");
   widget->Element.setClassName("widget__inlineValue");
 
-  let content = document |> Document.createElement("span");
+  let content = document |> Document.createElement("pre");
   widget |> Element.appendChild(content);
-  content->Element.setInnerHTML(html);
+  content->Element.setInnerText(html);
 
   widget;
 };
