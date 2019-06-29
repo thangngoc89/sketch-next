@@ -51,14 +51,10 @@ let make = (~editor, ~phrs: list(phrase)) => {
   <>
     {values
      ->Belt.List.map(({top, line, valueContent}) =>
-         <div
+         <ResultNode
            key={string_of_int(top)}
-           style={ReactDOMRe.Style.make(
-             ~top={string_of_int(top) ++ "px"},
-             ~width="300px",
-             ~position="absolute",
-             (),
-           )}
+           resultContent=valueContent
+           top
            onMouseOver={_ =>
              doc
              ->CodeMirror.Doc.addLineClass(
@@ -76,9 +72,8 @@ let make = (~editor, ~phrs: list(phrase)) => {
                  ~className="CodeMirror-activeline-background",
                )
              ->ignore
-           }>
-           valueContent->React.string
-         </div>
+           }
+         />
        )
      ->Belt.List.toArray
      ->React.array}

@@ -22,11 +22,11 @@
     }
     #editor {
       flex: 1;
-      max-width: calc(100vw - 300px);
+      max-width: calc(100vw - 350px);
     }
     #result {
       background: #eee;
-      flex: 0 0 300px;
+      flex: 0 0 350px;
       font-family: monospace;
       padding: 0 0.5rem;
       position: relative;
@@ -36,6 +36,31 @@
     }
     .exec-gutter {
       width: 10px;
+    }
+    .result__container {
+      width: 350px;
+      position: absolute;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+    }
+    .result__content {
+      flex: 1;
+    }
+    .result__button {
+      flex: 0 0 24px;
+      max-width: 24px;
+      padding: 0 0.5rem;
+      padding: 0;
+      border: none;
+      background: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .result__button > svg {
+      color: blue;
     }
   </style>
   <body>
