@@ -55,11 +55,11 @@ let make =
     onMouseOver
     onMouseOut>
     <span className="result__content"> clippedContent->React.string </span>
+    <button className="result__button"> <Icons.FiEye /> </button>
     <button
       className="result__button"
       onClick={_ => setInlineStatus(current => !current)}>
-      {!inlineStatus ? <Icons.FiEye /> : <Icons.FiEyeOff />}
+      {!inlineStatus ? <Icons.FiPlusSquare /> : <Icons.FiMinusSquare />}
     </button>
-    <button className="result__button"> <Icons.FiPlusSquare /> </button>
   </div>;
 };

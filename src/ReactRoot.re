@@ -3,13 +3,10 @@ open Types;
 let createWidget = html => {
   open Webapi.Dom;
   let widget = document |> Document.createElement("div");
-
-  let wrapper = document |> Document.createElement("div");
-
-  widget |> Element.appendChild(wrapper);
+  widget->Element.setClassName("widget__inlineValue");
 
   let content = document |> Document.createElement("span");
-  wrapper |> Element.appendChild(content);
+  widget |> Element.appendChild(content);
   content->Element.setInnerHTML(html);
 
   widget;
