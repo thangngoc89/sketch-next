@@ -12,7 +12,7 @@
     "in-source": true
   },
   "suffix": ".bs.js",
-  "bs-dependencies": ["bs-webapi", "reason-react"],
+  "bs-dependencies": ["bs-webapi", "reason-react", "reason-react-update"],
   "warnings": {
     "error": "+101"
   },

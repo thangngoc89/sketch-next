@@ -12,37 +12,109 @@ let createWidget = html => {
   widget;
 };
 
-type valueState = {
+type inlineWidget = option(CodeMirror.LineWidget.t);
+
+type phrResult = {
   top: int,
   line: int,
   valueContent: string,
-  inlineValue: bool,
+  inlineWidget,
   popupValue: bool,
+};
+
+type state = {phrResults: list(phrResult)};
+
+type action =
+  | PhrsUpdated(list(phrase))
+  | CalculateResultPosition
+  | ToggleInlineWidget(int);
+
+let mapPhrToPhrResult = (~phrs, ~getHeightAtLine) => {
+  phrs->Belt.List.map(phr =>
+    {
+      top: getHeightAtLine(phr.startLine),
+      line: phr.startLine,
+      valueContent: phr.value,
+      inlineWidget: None,
+      popupValue: false,
+    }
+  );
 };
 
 [@react.component]
 let make = (~editor, ~phrs: list(phrase)) => {
+  let getHeightAtLine = line => editor->CodeMirror.Editor.heightAtLine(~line);
   let (phrs, setPhrs) = React.useState(() => phrs);
+
+  let (state, send) =
+    ReactUpdate.useReducer(
+      {phrResults: mapPhrToPhrResult(~phrs, ~getHeightAtLine)},
+      (action, state) =>
+      switch (action) {
+      | PhrsUpdated(phrs) =>
+        Update({phrResults: mapPhrToPhrResult(~phrs, ~getHeightAtLine)})
+      | CalculateResultPosition =>
+        Update({
+          phrResults:
+            state.phrResults
+            ->Belt.List.map(phrResult =>
+                {...phrResult, top: getHeightAtLine(phrResult.line)}
+              ),
+        })
+      | ToggleInlineWidget(line) =>
+        let newState = {
+          phrResults:
+            state.phrResults
+            ->Belt.List.map(phrResult =>
+                if (line == phrResult.line) {
+                  switch (phrResult.inlineWidget) {
+                  | None => {
+                      ...phrResult,
+                      inlineWidget:
+                        Some(
+                          editor->CodeMirror.Editor.addLineWidget(
+                            ~line,
+                            ~element=createWidget(phrResult.valueContent),
+                            ~options=
+                              CodeMirror.LineWidget.options(
+                                ~noHScroll=true,
+                                ~coverGutter=false,
+                                ~above=false,
+                                ~showIfHidden=false,
+                                ~handleMouseEvents=false,
+                              ),
+                          ),
+                        ),
+                    }
+                  | Some(lineWidgetHandler) =>
+                    CodeMirror.LineWidget.clear(lineWidgetHandler);
+                    {...phrResult, inlineWidget: None};
+                  };
+                } else {
+                  phrResult;
+                }
+              ),
+        };
+        UpdateWithSideEffects(
+          newState,
+          ({send}) => {
+            send(CalculateResultPosition);
+            None;
+          },
+        );
+      }
+    );
+
+  React.useEffect1(
+    () => {
+      send(PhrsUpdated(phrs));
+      None;
+    },
+    [|phrs|],
+  );
 
   let doc =
     React.useMemo1(() => editor->CodeMirror.Editor.getDoc, [|editor|]);
-
-  let values =
-    React.useMemo1(
-      () =>
-        phrs->Belt.List.map(phr => {
-          let top =
-            editor->CodeMirror.Editor.heightAtLine(~line=phr.startLine);
-          {
-            top,
-            line: phr.startLine,
-            valueContent: phr.value,
-            inlineValue: false,
-            popupValue: false,
-          };
-        }),
-      [|phrs|],
-    );
 
   React.useEffect1(
     () => {
@@ -61,8 +133,8 @@ let make = (~editor, ~phrs: list(phrase)) => {
     [||],
   );
   <>
-    {values
-     ->Belt.List.map(({top, line, valueContent}) =>
+    {state.phrResults
+     ->Belt.List.map(({top, line, valueContent, inlineWidget}) =>
          <ResultNode
            key={string_of_int(top)}
            resultContent=valueContent
@@ -85,20 +157,13 @@ let make = (~editor, ~phrs: list(phrase)) => {
                )
              ->ignore
            }
-           handleShowInline={() =>
-             editor->CodeMirror.Editor.addLineWidget(
-               ~line,
-               ~element=createWidget(valueContent),
-               ~options=
-                 CodeMirror.LineWidget.options(
-                   ~noHScroll=true,
-                   ~coverGutter=false,
-                   ~above=false,
-                   ~showIfHidden=false,
-                   ~handleMouseEvents=false,
-                 ),
-             )
+           showInlineWidget={
+             switch (inlineWidget) {
+             | None => false
+             | Some(_) => true
+             }
            }
+           handleToggleInlineWidget={() => send(ToggleInlineWidget(line))}
          />
        )
      ->Belt.List.toArray
