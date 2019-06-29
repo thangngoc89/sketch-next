@@ -27,6 +27,7 @@ type state = {phrResults: list(phrResult)};
 type action =
   | PhrsUpdated(list(phrase))
   | CalculateResultPosition
+  | Editor_EditedFromLine(int)
   | ToggleInlineWidget(int);
 
 let mapPhrToPhrResult = (~phrs, ~getHeightAtLine) => {
@@ -61,6 +62,28 @@ let make = (~editor, ~phrs: list(phrase)) => {
                 {...phrResult, top: getHeightAtLine(phrResult.line)}
               ),
         })
+      | Editor_EditedFromLine(editedFromLine) =>
+        let needsCleanUp =
+          state.phrResults
+          ->Belt.List.keep(({line}) => line >= editedFromLine);
+
+        UpdateWithSideEffects(
+          {
+            phrResults:
+              state.phrResults
+              ->Belt.List.keep(({line}) => line < editedFromLine),
+          },
+          _ => {
+            needsCleanUp->Belt.List.forEach(({inlineWidget}) =>
+              switch (inlineWidget) {
+              | None => ()
+              | Some(lwHandler) => CodeMirror.LineWidget.clear(lwHandler)
+              }
+            );
+            None;
+          },
+        );
+
       | ToggleInlineWidget(line) =>
         let newState = {
           phrResults:
@@ -121,10 +144,7 @@ let make = (~editor, ~phrs: list(phrase)) => {
       EventEmitter.subscribe(event =>
         switch (event) {
         | UpdatePhrs(phrs) => setPhrs(_ => phrs)
-        | EditedFromLine(line) =>
-          setPhrs(currentPhrs =>
-            currentPhrs->Belt.List.keep(({startLine}) => startLine < line)
-          )
+        | EditedFromLine(line) => send(Editor_EditedFromLine(line))
         | _ => ()
         }
       );
