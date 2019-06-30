@@ -12,6 +12,24 @@ let createWidget = html => {
   widget;
 };
 
+let createGutterMarker = status => {
+  open Webapi.Dom;
+  open ExecutionState;
+
+  let className =
+    switch (status) {
+    | Executed => "executed"
+    | Executable => "executable"
+    | ExecutableButIgnored => "executable-but-ignored"
+    | NonExecutable => "non-executable"
+    | ExecutableAndPlay => "executable-and-play"
+    | NonExecutableAndPlay => "non-executable-and-play"
+    };
+  let marker = document |> Document.createElement("span");
+  marker->Element.setClassName("exec-gutter " ++ className);
+
+  marker;
+};
 type inlineWidget = option(CodeMirror.LineWidget.t);
 
 type phrResult = {
@@ -22,13 +40,17 @@ type phrResult = {
   popupValue: bool,
 };
 
-type state = {phrResults: list(phrResult)};
+type state = {
+  phrResults: list(phrResult),
+  mutable gutterState: array(ExecutionState.lineGutterStatus),
+};
 
 type action =
   | PhrsUpdated(list(phrase))
   | CalculateResultPosition
   | Editor_EditedFromLine(int)
-  | ToggleInlineWidget(int);
+  | ToggleInlineWidget(int)
+  | PatchGutterState(list(ExecutionState.operation));
 
 let mapPhrToPhrResult = (~phrs, ~getHeightAtLine) => {
   phrs->Belt.List.map(phr =>
@@ -44,18 +66,28 @@ let mapPhrToPhrResult = (~phrs, ~getHeightAtLine) => {
 
 [@react.component]
 let make = (~editor, ~phrs: list(phrase)) => {
+  let doc =
+    React.useMemo1(() => editor->CodeMirror.Editor.getDoc, [|editor|]);
+
   let getHeightAtLine = line => editor->CodeMirror.Editor.heightAtLine(~line);
   let (phrs, setPhrs) = React.useState(() => phrs);
 
   let (state, send) =
     ReactUpdate.useReducer(
-      {phrResults: mapPhrToPhrResult(~phrs, ~getHeightAtLine)},
+      {
+        gutterState: [||],
+        phrResults: mapPhrToPhrResult(~phrs, ~getHeightAtLine),
+      },
       (action, state) =>
       switch (action) {
       | PhrsUpdated(phrs) =>
-        Update({phrResults: mapPhrToPhrResult(~phrs, ~getHeightAtLine)})
+        Update({
+          ...state,
+          phrResults: mapPhrToPhrResult(~phrs, ~getHeightAtLine),
+        })
       | CalculateResultPosition =>
         Update({
+          ...state,
           phrResults:
             state.phrResults
             ->Belt.List.map(phrResult =>
@@ -69,6 +101,7 @@ let make = (~editor, ~phrs: list(phrase)) => {
 
         UpdateWithSideEffects(
           {
+            ...state,
             phrResults:
               state.phrResults
               ->Belt.List.keep(({line}) => line < editedFromLine),
@@ -86,6 +119,7 @@ let make = (~editor, ~phrs: list(phrase)) => {
 
       | ToggleInlineWidget(line) =>
         let newState = {
+          ...state,
           phrResults:
             state.phrResults
             ->Belt.List.map(phrResult =>
@@ -125,6 +159,22 @@ let make = (~editor, ~phrs: list(phrase)) => {
             None;
           },
         );
+      | PatchGutterState(ops) =>
+        let _ =
+          editor->CodeMirror.Editor.operation((.) =>
+            ops->Belt.List.forEach(
+              fun
+              | Op_change(line, newStatus) =>
+                doc->CodeMirror.Doc.setGutterMarker(
+                  ~line,
+                  ~gutterId="exec-gutter",
+                  ~value=createGutterMarker(newStatus),
+                )
+              | Op_remove(line) => failwith("unimplemented"),
+            )
+          );
+
+        NoUpdate;
       }
     );
 
@@ -136,8 +186,38 @@ let make = (~editor, ~phrs: list(phrase)) => {
     [|phrs|],
   );
 
-  let doc =
-    React.useMemo1(() => editor->CodeMirror.Editor.getDoc, [|editor|]);
+  React.useEffect1(
+    () => {
+      open ExecutionState;
+      let rec loop = (xs, ops) => {
+        switch (xs) {
+        | [] => ops
+        | [phr] =>
+          let newFragment = ref([]);
+          for (line in phr.startLine to phr.endLine) {
+            newFragment :=
+              [
+                Op_change(
+                  line,
+                  line == phr.endLine ? ExecutableAndPlay : Executable,
+                ),
+                ...newFragment^,
+              ];
+          };
+          Belt.List.concat(ops, newFragment^);
+        | [phr, ...xs] =>
+          let newFragment = ref([]);
+          for (line in phr.startLine to phr.endLine) {
+            newFragment := [Op_change(line, Executable), ...newFragment^];
+          };
+          loop(xs, Belt.List.concat(ops, newFragment^));
+        };
+      };
+      send(PatchGutterState(loop(phrs, [])));
+      None;
+    },
+    [||],
+  );
 
   React.useEffect1(
     () => {
