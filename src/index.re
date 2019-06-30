@@ -68,4 +68,20 @@ ReactDOMRe.renderToElementWithId(<ReactRoot editor phrs />, "result");
 %raw
 {|
   window.cm = editor;
+
+  // var hoverElt, hoverLine;
+  // CodeMirror.on(gutter, "mouseover", function(e) {
+  //   console.log("gutter mouseover");
+  //   var y = e.target.getBoundingClientRect().top + 4 + document.body.scrollTop;
+  //   var pos = cm.coordsChar({x: 0, y: y});
+  //   if (!pos) return;
+  //   hoverElt = e.target; hoverLine = pos.line;
+  //   console.log("over line " + pos.line);
+  // });
+  // CodeMirror.on(gutter, "mouseout", function(e) {
+  //   console.log("gutter mouseout");
+  //   if (e.target != hoverElt) return;
+  //   console.log("left line " + hoverLine);
+  //   hoverElt = hoverLine = null;
+  // });
 |};

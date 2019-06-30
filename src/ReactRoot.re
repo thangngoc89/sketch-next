@@ -42,7 +42,7 @@ type phrResult = {
 
 type state = {
   phrResults: list(phrResult),
-  mutable gutterState: array(ExecutionState.gutterState),
+  gutterState: GutterManager.state,
 };
 
 type action =
@@ -50,7 +50,7 @@ type action =
   | CalculateResultPosition
   | Editor_EditedFromLine(int)
   | ToggleInlineWidget(int)
-  | PatchGutterState(list(ExecutionState.operation));
+  | UpdateGutterState(GutterManager.state, list(ExecutionState.gutterPatch));
 
 let mapPhrToPhrResult = (~phrs, ~getHeightAtLine) => {
   phrs->Belt.List.map(phr =>
@@ -75,7 +75,11 @@ let make = (~editor, ~phrs: list(phrase)) => {
   let (state, send) =
     ReactUpdate.useReducer(
       {
-        gutterState: [||],
+        gutterState: {
+          maxLines: editor->CodeMirror.Editor.lineCount,
+          lastExecutedLine: (-1),
+          gutters: [||],
+        },
         phrResults: mapPhrToPhrResult(~phrs, ~getHeightAtLine),
       },
       (action, state) =>
@@ -159,22 +163,26 @@ let make = (~editor, ~phrs: list(phrase)) => {
             None;
           },
         );
-      | PatchGutterState(ops) =>
-        let _ =
-          editor->CodeMirror.Editor.operation((.) =>
-            ops->Belt.List.forEach(
-              fun
-              | Op_change(line, newStatus) =>
-                doc->CodeMirror.Doc.setGutterMarker(
-                  ~line,
-                  ~gutterId="exec-gutter",
-                  ~value=createGutterMarker(newStatus),
-                )
-              | Op_remove(line) => failwith("unimplemented"),
-            )
-          );
-
-        NoUpdate;
+      | UpdateGutterState(gutterState, ops) =>
+        UpdateWithSideEffects(
+          {...state, gutterState},
+          _ => {
+            editor->CodeMirror.Editor.operation((.) =>
+              ops->Belt.List.forEach(
+                fun
+                | Patch_change(line, newStatus)
+                | Patch_add(line, newStatus) =>
+                  doc->CodeMirror.Doc.setGutterMarker(
+                    ~line,
+                    ~gutterId="exec-gutter",
+                    ~value=createGutterMarker(newStatus),
+                  )
+                | Patch_remove(line) => failwith("unimplemented"),
+              )
+            );
+            None;
+          },
+        )
       }
     );
 
@@ -188,32 +196,9 @@ let make = (~editor, ~phrs: list(phrase)) => {
 
   React.useEffect1(
     () => {
-      open ExecutionState;
-      let rec loop = (xs, ops) => {
-        switch (xs) {
-        | [] => ops
-        | [phr] =>
-          let newFragment = ref([]);
-          for (line in phr.startLine to phr.endLine) {
-            newFragment :=
-              [
-                Op_change(
-                  line,
-                  line == phr.endLine ? ExecutableAndPlay : Executable,
-                ),
-                ...newFragment^,
-              ];
-          };
-          Belt.List.concat(ops, newFragment^);
-        | [phr, ...xs] =>
-          let newFragment = ref([]);
-          for (line in phr.startLine to phr.endLine) {
-            newFragment := [Op_change(line, Executable), ...newFragment^];
-          };
-          loop(xs, Belt.List.concat(ops, newFragment^));
-        };
-      };
-      send(PatchGutterState(loop(phrs, [])));
+      let (newState, patch) =
+        GutterManager.calculateState(~phrs, ~state=state.gutterState);
+      send(UpdateGutterState(newState, patch));
       None;
     },
     [||],

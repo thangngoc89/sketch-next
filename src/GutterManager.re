@@ -69,7 +69,7 @@ let patchCalculator = (before, after) => {
     compareTheCommonPart(~from=0, ~to_=bfLength - 1, ~before, ~after);
   } else if (bfLength > afLength) {
     for (i in bfLength - 1 downto afLength) {
-      ops := [Patch_remove(i, before[i]), ...ops^];
+      ops := [Patch_remove(i), ...ops^];
     };
     compareTheCommonPart(~from=0, ~to_=afLength - 1, ~before, ~after);
   };

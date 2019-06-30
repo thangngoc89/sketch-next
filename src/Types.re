@@ -20,7 +20,7 @@ type event +=
 type patch('a) =
   | Patch_add(int, 'a)
   | Patch_change(int, 'a)
-  | Patch_remove(int, 'a);
+  | Patch_remove(int);
 
 module ExecutionState = {
   type gutterState =
