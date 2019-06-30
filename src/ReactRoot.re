@@ -234,6 +234,7 @@ let make = (~editor, ~phrs: list(phrase)) => {
         switch (event) {
         | UpdatePhrs(phrs) => setPhrs(_ => phrs)
         | EditedFromLine(line) => send(Editor_EditedFromLine(line))
+        | CursorMove(line) => send(HoverGutter(line))
         | _ => ()
         }
       );

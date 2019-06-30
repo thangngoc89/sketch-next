@@ -17,7 +17,8 @@ type phrase = {
 type event = ..;
 type event +=
   | UpdatePhrs(list(phrase))
-  | EditedFromLine(int);
+  | EditedFromLine(int)
+  | CursorMove(int);
 
 type patch('a) =
   | Patch_add(int, 'a)
