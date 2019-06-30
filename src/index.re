@@ -43,7 +43,7 @@ editor->CodeMirror.Editor.onChange((_editor, diff) => {
 
 editor->CodeMirror.Editor.onCursorActivity(doc => {
   let currentCursorLine =
-    doc->CodeMirror.Doc.getCursor(`head)->CodeMirror.Position.lineGet;
+    doc->CodeMirror.Doc.getCursor(`end_)->CodeMirror.Position.lineGet;
   EventEmitter.emit(CursorMove(currentCursorLine));
 });
 let phrs = [
