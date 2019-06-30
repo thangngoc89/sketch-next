@@ -42,7 +42,7 @@ type phrResult = {
 
 type state = {
   phrResults: list(phrResult),
-  mutable gutterState: array(ExecutionState.lineGutterStatus),
+  mutable gutterState: array(ExecutionState.gutterState),
 };
 
 type action =
