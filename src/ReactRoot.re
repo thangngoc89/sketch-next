@@ -12,7 +12,7 @@ let createWidget = html => {
   widget;
 };
 
-let createGutterMarker = status => {
+let createGutterMarker = (handleHoverCb, status) => {
   open Webapi.Dom;
   open ExecutionState;
 
@@ -28,6 +28,7 @@ let createGutterMarker = status => {
   let marker = document |> Document.createElement("span");
   marker->Element.setClassName("exec-gutter " ++ className);
 
+  marker |> Element.addMouseOverEventListener(handleHoverCb);
   marker;
 };
 type inlineWidget = option(CodeMirror.LineWidget.t);
@@ -175,7 +176,7 @@ let make = (~editor, ~phrs: list(phrase)) => {
                   doc->CodeMirror.Doc.setGutterMarker(
                     ~line,
                     ~gutterId="exec-gutter",
-                    ~value=createGutterMarker(newStatus),
+                    ~value=createGutterMarker(_ => Js.log(line), newStatus),
                   )
                 | Patch_remove(line) => failwith("unimplemented"),
               )
