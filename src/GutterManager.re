@@ -1,12 +1,6 @@
 open Types;
 open ExecutionState;
 
-type state = {
-  mutable maxLines: int,
-  mutable lastExecutedLine: int,
-  gutters: array(gutterState),
-};
-
 /*
  * This is a 2 pass process
  * 1st pass:

@@ -43,7 +43,7 @@ type phrResult = {
 
 type state = {
   phrResults: list(phrResult),
-  gutterState: GutterManager.state,
+  gutterState: ExecutionState.gutterManager,
 };
 
 type action =
@@ -51,7 +51,11 @@ type action =
   | CalculateResultPosition
   | Editor_EditedFromLine(int)
   | ToggleInlineWidget(int)
-  | UpdateGutterState(GutterManager.state, list(ExecutionState.gutterPatch));
+  | UpdateGutterState(
+      ExecutionState.gutterManager,
+      list(ExecutionState.gutterPatch),
+    )
+  | HoverGutter(int);
 
 let mapPhrToPhrResult = (~phrs, ~getHeightAtLine) => {
   phrs->Belt.List.map(phr =>
@@ -167,7 +171,7 @@ let make = (~editor, ~phrs: list(phrase)) => {
       | UpdateGutterState(gutterState, ops) =>
         UpdateWithSideEffects(
           {...state, gutterState},
-          _ => {
+          ({send}) => {
             editor->CodeMirror.Editor.operation((.) =>
               ops->Belt.List.forEach(
                 fun
@@ -176,7 +180,11 @@ let make = (~editor, ~phrs: list(phrase)) => {
                   doc->CodeMirror.Doc.setGutterMarker(
                     ~line,
                     ~gutterId="exec-gutter",
-                    ~value=createGutterMarker(_ => Js.log(line), newStatus),
+                    ~value=
+                      createGutterMarker(
+                        _ => send(HoverGutter(line)),
+                        newStatus,
+                      ),
                   )
                 | Patch_remove(line) => failwith("unimplemented"),
               )
@@ -184,6 +192,9 @@ let make = (~editor, ~phrs: list(phrase)) => {
             None;
           },
         )
+      | HoverGutter(line) =>
+        Js.log2("Hovering gutter", line);
+        NoUpdate;
       }
     );
 

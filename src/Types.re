@@ -36,5 +36,11 @@ module ExecutionState = {
     | Ps_executable
     | Ps_non_executable;
 
+  type gutterManager = {
+    mutable maxLines: int,
+    mutable lastExecutedLine: int,
+    gutters: array(gutterState),
+  };
+
   type gutterPatch = patch(gutterState);
 };
