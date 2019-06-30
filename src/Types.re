@@ -1,3 +1,5 @@
+module MutableIntSet = Belt.MutableSet.Int;
+
 type pos = {
   char: int,
   line: int,
@@ -49,6 +51,7 @@ module ExecutionState = {
     mutable maxLines: int,
     mutable lastExecutedLine: int,
     mutable requestToExecuteAtLine: int,
+    mutable playableLines: MutableIntSet.t,
     gutters: array(gutterState),
   };
 

@@ -40,19 +40,28 @@ let patchCalculator = (before, after) => {
  */
 
 let makeParserState = (~phrs, ~state) => {
-  let {maxLines, gutters: _, lastExecutedLine, requestToExecuteAtLine: _} = state;
+  let {
+    maxLines,
+    gutters: _,
+    lastExecutedLine,
+    requestToExecuteAtLine: _,
+    playableLines,
+  } = state;
 
   let arr = Array.make(maxLines, None);
   phrs
-  |> List.iter(({startLine, endLine}) =>
+  |> List.iter(({startLine, endLine}) => {
        for (line in startLine to endLine) {
          if (line <= lastExecutedLine) {
            arr[line] = Some(Ps_executed);
          } else {
            arr[line] = Some(Ps_executable);
          };
-       }
-     );
+       };
+       if (endLine > lastExecutedLine) {
+         playableLines->MutableIntSet.add(endLine);
+       };
+     });
 
   let lastExecutableLine = Js.Array.lastIndexOf(Some(Ps_executable), arr);
 
@@ -74,7 +83,13 @@ let makeParserState = (~phrs, ~state) => {
 
 let calculateState = (~phrs, ~state) => {
   let parserState = makeParserState(~phrs, ~state);
-  let {maxLines: _, gutters, lastExecutedLine, requestToExecuteAtLine} = state;
+  let {
+    maxLines: _,
+    gutters,
+    lastExecutedLine,
+    requestToExecuteAtLine,
+    playableLines,
+  } = state;
 
   let finalState =
     parserState
@@ -91,10 +106,18 @@ let calculateState = (~phrs, ~state) => {
     let lastExecutableLine = Js.Array.lastIndexOf(Executable, finalState);
     finalState[lastExecutableLine] = ExecutableAndPlay;
   | (_, _) =>
-    switch (finalState[requestToExecuteAtLine]) {
-    // This is a executable line, make it so
-    | Executable => finalState[requestToExecuteAtLine] = ExecutableAndPlay
-    | _ => failwith("Unimplemented")
+    if (playableLines->MutableIntSet.has(requestToExecuteAtLine)) {
+      finalState[requestToExecuteAtLine] = ExecutableAndPlay;
+    } else {
+      finalState
+      |> Array.iteri(line =>
+           (
+             fun
+             | Executable => finalState[line] = NonExecutable
+             | _ => ()
+           )
+         );
+      finalState[requestToExecuteAtLine] = NonExecutableAndPlay;
     }
   };
   ({...state, gutters: finalState}, patchCalculator(gutters, finalState));

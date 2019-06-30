@@ -85,6 +85,7 @@ let make = (~editor, ~phrs: list(phrase)) => {
           lastExecutedLine: (-1),
           gutters: [||],
           requestToExecuteAtLine: (-1),
+          playableLines: MutableIntSet.make(),
           phrs,
         },
         phrResults: mapPhrToPhrResult(~phrs, ~getHeightAtLine),
