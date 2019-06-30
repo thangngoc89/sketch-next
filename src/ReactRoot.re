@@ -84,6 +84,8 @@ let make = (~editor, ~phrs: list(phrase)) => {
           maxLines: editor->CodeMirror.Editor.lineCount,
           lastExecutedLine: (-1),
           gutters: [||],
+          requestToExecuteAtLine: (-1),
+          phrs,
         },
         phrResults: mapPhrToPhrResult(~phrs, ~getHeightAtLine),
       },
@@ -193,8 +195,17 @@ let make = (~editor, ~phrs: list(phrase)) => {
           },
         )
       | HoverGutter(line) =>
-        Js.log2("Hovering gutter", line);
-        NoUpdate;
+        let (newState, patch) =
+          GutterManager.gutterEventHandler(
+            ~event=ExecutionState.Ge_request_to_execute_at_line(line),
+            ~state=state.gutterState,
+          );
+        SideEffects(
+          ({send}) => {
+            send(UpdateGutterState(newState, patch));
+            None;
+          },
+        );
       }
     );
 

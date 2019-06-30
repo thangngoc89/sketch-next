@@ -1,6 +1,35 @@
 open Types;
 open ExecutionState;
 
+let patchCalculator = (before, after) => {
+  let afLength = Array.length(after);
+  let bfLength = Array.length(before);
+
+  let ops = ref([]);
+
+  let compareTheCommonPart = (~from, ~to_, ~before, ~after) =>
+    for (i in to_ downto from) {
+      if (before[i] != after[i]) {
+        ops := [Patch_change(i, after[i]), ...ops^];
+      };
+    };
+
+  if (afLength > bfLength) {
+    for (i in bfLength to afLength - 1) {
+      ops := [Patch_add(i, after[i]), ...ops^];
+    };
+    compareTheCommonPart(~from=0, ~to_=bfLength - 1, ~before, ~after);
+  } else if (bfLength > afLength) {
+    for (i in bfLength - 1 downto afLength) {
+      ops := [Patch_remove(i), ...ops^];
+    };
+    compareTheCommonPart(~from=0, ~to_=afLength - 1, ~before, ~after);
+  } else {
+    compareTheCommonPart(~from=0, ~to_=afLength - 1, ~before, ~after);
+  };
+  ops^;
+};
+
 /*
  * This is a 2 pass process
  * 1st pass:
@@ -11,7 +40,7 @@ open ExecutionState;
  */
 
 let makeParserState = (~phrs, ~state) => {
-  let {maxLines, gutters: _, lastExecutedLine} = state;
+  let {maxLines, gutters: _, lastExecutedLine, requestToExecuteAtLine: _} = state;
 
   let arr = Array.make(maxLines, None);
   phrs
@@ -43,36 +72,9 @@ let makeParserState = (~phrs, ~state) => {
      );
 };
 
-let patchCalculator = (before, after) => {
-  let afLength = Array.length(after);
-  let bfLength = Array.length(before);
-
-  let ops = ref([]);
-
-  let compareTheCommonPart = (~from, ~to_, ~before, ~after) =>
-    for (i in to_ downto from) {
-      if (before[i] != after[i]) {
-        ops := [Patch_change(i, after[i]), ...ops^];
-      };
-    };
-
-  if (afLength > bfLength) {
-    for (i in bfLength to afLength - 1) {
-      ops := [Patch_add(i, after[i]), ...ops^];
-    };
-    compareTheCommonPart(~from=0, ~to_=bfLength - 1, ~before, ~after);
-  } else if (bfLength > afLength) {
-    for (i in bfLength - 1 downto afLength) {
-      ops := [Patch_remove(i), ...ops^];
-    };
-    compareTheCommonPart(~from=0, ~to_=afLength - 1, ~before, ~after);
-  };
-  ops^;
-};
-
 let calculateState = (~phrs, ~state) => {
   let parserState = makeParserState(~phrs, ~state);
-  let {maxLines: _, gutters, lastExecutedLine} = state;
+  let {maxLines: _, gutters, lastExecutedLine, requestToExecuteAtLine} = state;
 
   let finalState =
     parserState
@@ -83,11 +85,25 @@ let calculateState = (~phrs, ~state) => {
          | Ps_non_executable => NonExecutable,
        );
 
-  // Initial state, everything should be executable
-  if (lastExecutedLine == (-1)) {
+  switch (lastExecutedLine, requestToExecuteAtLine) {
+  | ((-1), (-1)) =>
+    // Initial state, nothing was executed, nothing was requested
     let lastExecutableLine = Js.Array.lastIndexOf(Executable, finalState);
     finalState[lastExecutableLine] = ExecutableAndPlay;
+  | (_, _) =>
+    switch (finalState[requestToExecuteAtLine]) {
+    // This is a executable line, make it so
+    | Executable => finalState[requestToExecuteAtLine] = ExecutableAndPlay
+    | _ => failwith("Unimplemented")
+    }
   };
-
   ({...state, gutters: finalState}, patchCalculator(gutters, finalState));
+};
+
+let gutterEventHandler = (~event, ~state) => {
+  switch (event) {
+  | Ge_request_to_execute_at_line(line) =>
+    state.requestToExecuteAtLine = line;
+    calculateState(~phrs=state.phrs, ~state);
+  };
 };

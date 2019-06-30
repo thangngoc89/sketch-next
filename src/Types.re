@@ -31,16 +31,29 @@ module ExecutionState = {
     | ExecutableAndPlay /* show a play button */
     | NonExecutableAndPlay; /* show a play button */
 
+  let string_of_gutterState =
+    fun
+    | Executed => "executed" /* don't show anything */
+    | Executable => "executable" /* show primary color */
+    | ExecutableButIgnored => "executable but ignored" /* when using mouse to hover on a gutter above */
+    | NonExecutable => "non executable" /* show grey */
+    | ExecutableAndPlay => "executable and play" /* show a play button */
+    | NonExecutableAndPlay => "none executable and play"; /* show a play button */
   type parserState =
     | Ps_executed
     | Ps_executable
     | Ps_non_executable;
 
   type gutterManager = {
+    mutable phrs: list(phrase),
     mutable maxLines: int,
     mutable lastExecutedLine: int,
+    mutable requestToExecuteAtLine: int,
     gutters: array(gutterState),
   };
+
+  type gutterEvent =
+    | Ge_request_to_execute_at_line(int);
 
   type gutterPatch = patch(gutterState);
 };
